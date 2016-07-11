@@ -126,4 +126,4 @@ def main(file_, tweet_len):
     print genSentence(markovLength)
 
 if __name__ == "__main__":
-    main('data/des2.txt', 1)
+    main('/Users/marcversage/Desktop/Apps/Beer_Review_Bot/data/beer_reviews.txt', 2)
