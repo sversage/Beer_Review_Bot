@@ -1,9 +1,5 @@
 import re
 import random
-import sys
-
-# These mappings can get fairly large -- they're stored globally to
-# save copying time.
 
 # (tuple of words) -> {dict: word -> number of times the word appears following the tuple}
 # Example entry:
@@ -20,7 +16,7 @@ mapping = {}
 starts = []
 
 # We want to be able to compare words independent of their capitalization.
-def fixCaps(word):
+def fix_caps(word):
     # Ex: "FOO" -> "foo"
     if word.isupper() and word != "I":
         word = word.lower()
@@ -32,9 +28,6 @@ def fixCaps(word):
         word = word.lower()
     return word
 
-# Tuples can be hashed; lists can't.  We need hashable values for dict keys.
-# This looks like a hack (and it is, a little) but in practice it doesn't
-# affect processing time too negatively.
 def toHashKey(lst):
     return tuple(lst)
 
@@ -42,17 +35,15 @@ def toHashKey(lst):
 # (some) punctuation.
 def wordlist(filename):
     f = open(filename, 'r')
-    wordlist = [fixCaps(w) for w in re.findall(r"[\w']+|[.,!?;]", f.read())]
+    wordlist = [fix_caps(w) for w in re.findall(r"[\w']+|[.,!?;]", f.read())]
     f.close()
     return wordlist
 
-# Self-explanatory -- adds "word" to the "tempMapping" dict under "history".
 # tempMapping (and mapping) both match each word to a list of possible next
 # words.
 # Given history = ["the", "rain", "in"] and word = "Spain", we add "Spain" to
 # the entries for ["the", "rain", "in"], ["rain", "in"], and ["in"].
-def addItemToTempMapping(history, word):
-    global tempMapping
+def add_item_to_temp_mapping(history, word):
     while len(history) > 0:
         first = toHashKey(history)
         if first in tempMapping:
@@ -66,9 +57,7 @@ def addItemToTempMapping(history, word):
         history = history[1:]
 
 # Building and normalizing the mapping.
-def buildMapping(wordlist, markovLength):
-    print 'yes'
-    global tempMapping
+def build_mapping(wordlist, markovLength):
     starts.append(wordlist [0])
     for i in range(1, len(wordlist) - 1):
         if i <= markovLength:
@@ -79,7 +68,7 @@ def buildMapping(wordlist, markovLength):
         # if the last elt was a period, add the next word to the start list
         if history[-1] == "." and follow not in ".,!?;":
             starts.append(follow)
-        addItemToTempMapping(history, follow)
+        add_item_to_temp_mapping(history, follow)
     # Normalize the values in tempMapping, put them into mapping
     for first, followset in tempMapping.iteritems():
         total = sum(followset.values())
@@ -102,7 +91,7 @@ def next(prevList):
             retval = k
     return retval
 
-def genSentence(markovLength):
+def gen_sentence(markovLength):
     # Start with a random "starting word"
     curr = random.choice(starts)
     sent = curr.capitalize()
@@ -119,11 +108,29 @@ def genSentence(markovLength):
         sent += curr
     return sent
 
+def gen_tweet(markovLength):
+    counter = 0
+    tweet = []
+
+    #Keep tweet short enough to tweet
+    while counter <=139:
+        sentence = gen_sentence(markovLength)
+        #Stop sentence appending if it exceeds threshold
+        if len(sentence) + counter > 139:
+            break
+        else:
+            for word in sentence:
+                for letter in word:
+                    counter+=1
+        tweet.append(sentence)
+    return ' '.join(tweet)
+
 def main(file_, tweet_len):
     filename = file_
     markovLength = int(tweet_len)
-    buildMapping(wordlist(filename), markovLength)
-    print genSentence(markovLength)
+    build_mapping(wordlist(filename), markovLength)
+
+    return gen_tweet(markovLength)
 
 if __name__ == "__main__":
-    main('/Users/marcversage/Desktop/Apps/Beer_Review_Bot/data/beer_reviews.txt', 2)
+    main('/Users/marcversage/Desktop/Apps/Beer_Review_Bot/data/beer_reviews.txt', 1)
